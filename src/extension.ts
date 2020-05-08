@@ -13,6 +13,8 @@ interface MoveByArgs{
 
 interface NarrowByArgs{
     unit?: string,
+    then?: string,
+    thenBoundary?: string,
     boundary?: string,
 }
 
@@ -147,8 +149,14 @@ function first<T>(x: Iterable<T>): T | undefined {
     }
 }
 
-function narrowTo(editor: vscode.TextEditor, args: NarrowByArgs){
+function narrowTo(editor: vscode.TextEditor, args: NarrowByArgs): (select: vscode.Selection) => vscode.Selection {
     let unit = args.unit === undefined ? /\p{L}+/gu : units[args.unit];
+    let thenNarrow = args.then === undefined ? undefined :
+        narrowTo(editor, {
+            unit: args.then,
+            boundary: args.thenBoundary === undefined ? args.boundary :
+                args.thenBoundary
+        });
 
     let boundary: Boundary;
     if(args.boundary === undefined){
@@ -160,7 +168,7 @@ function narrowTo(editor: vscode.TextEditor, args: NarrowByArgs){
     }else if(args.boundary === 'both'){
         boundary = Boundary.Both;
     }else{
-        vscode.window.showErrorMessage("Unexpected value for boundary argument: '"+args.boundary+"'.")
+        vscode.window.showErrorMessage("Unexpected value for boundary argument: '"+args.boundary+"'.");
         return (select: vscode.Selection) => select;
     }
 
@@ -168,16 +176,21 @@ function narrowTo(editor: vscode.TextEditor, args: NarrowByArgs){
         if(select.anchor.isEqual(select.active)){
             return select;
         }
-        let step = first(unitsForDoc(editor.document,select.start,
+        let starts = unitsForDoc(editor.document,select.start,
             boundary === Boundary.Both ? Boundary.Start : boundary,
-            unit,true));
+            unit,true);
+        let step = first(starts);
         let start = step === undefined ? select.start: step;
 
-        step = first(unitsForDoc(editor.document,select.end,
+        let stops = unitsForDoc(editor.document,select.end,
             boundary === Boundary.Both ? Boundary.End : boundary,
-            unit,false));
+            unit,false);
+        step = first(stops);
         let stop = step === undefined ? select.end : step;
 
+        if(stop.isEqual(select.end) && start.isEqual(select.start)){
+            if(thenNarrow){ return thenNarrow(select); }
+        }
         if(select.anchor.isBefore(select.active)){
             return new vscode.Selection(start,stop);
         }else{
