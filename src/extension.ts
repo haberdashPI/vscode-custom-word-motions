@@ -168,15 +168,15 @@ function narrowTo(editor: vscode.TextEditor, args: NarrowByArgs){
         if(select.anchor.isEqual(select.active)){
             return select;
         }
-        let step = first(unitsForDoc(editor.document,select.anchor,
+        let step = first(unitsForDoc(editor.document,select.start,
             boundary === Boundary.Both ? Boundary.Start : boundary,
             unit,true));
-        let start = step === undefined ? select.anchor : step;
+        let start = step === undefined ? select.start: step;
 
-        step = first(unitsForDoc(editor.document,select.active,
+        step = first(unitsForDoc(editor.document,select.end,
             boundary === Boundary.Both ? Boundary.End : boundary,
             unit,false));
-        let stop = step === undefined ? select.active : step;
+        let stop = step === undefined ? select.end : step;
 
         if(select.anchor.isBefore(select.active)){
             return new vscode.Selection(start,stop);
