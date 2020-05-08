@@ -11,6 +11,11 @@ interface MoveByArgs{
     boundary?: string,
 }
 
+interface NarrowByArgs{
+    unit?: string,
+    boundary?: string,
+}
+
 interface IHash<T>{
     [details: string]: T
 }
@@ -46,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with registerCommand
     // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('vscode-custom-word-motions.moveby',
+    let command = vscode.commands.registerCommand('vscode-custom-word-motions.moveby',
         (args: MoveByArgs) => {
             let editor = vscode.window.activeTextEditor;
             if(editor){
@@ -55,8 +60,18 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
     );
+    context.subscriptions.push(command);
 
-    context.subscriptions.push(disposable);
+    command = vscode.commands.registerCommand('vscode-custom-word-motions.narrowto',
+        (args: NarrowByArgs) => {
+            let editor = vscode.window.activeTextEditor;
+            if(editor){
+                editor.selections = editor.selections.map(narrowTo(editor,args));
+                editor.revealRange(editor.selection);
+            }
+        }
+    );
+    context.subscriptions.push(command);
 }
 
 enum Boundary {
@@ -122,10 +137,53 @@ function* unitBoundaries(text: string,boundary: Boundary, unit: RegExp){
     }
 }
 
-function first<T>(x: Iterable<T>): [IteratorResult<T,T>, Iterator<T,T>]{
-    let itr: Iterator<T> = x[Symbol.iterator]()
+function first<T>(x: Iterable<T>): T | undefined {
+    let itr: Iterator<T> = x[Symbol.iterator]();
     let result: IteratorResult<T,T> = itr.next();
-    return [result, itr]
+    if(!result.done){
+        return result.value;
+    }else{
+        return undefined;
+    }
+}
+
+function narrowTo(editor: vscode.TextEditor, args: NarrowByArgs){
+    let unit = args.unit === undefined ? /\p{L}+/gu : units[args.unit];
+
+    let boundary: Boundary;
+    if(args.boundary === undefined){
+        boundary = Boundary.Both;
+    }else if(args.boundary === 'start'){
+        boundary = Boundary.Start;
+    }else if(args.boundary === 'end'){
+        boundary = Boundary.End;
+    }else if(args.boundary === 'both'){
+        boundary = Boundary.Both;
+    }else{
+        vscode.window.showErrorMessage("Unexpected value for boundary argument: '"+args.boundary+"'.")
+        return (select: vscode.Selection) => select;
+    }
+
+    return (select: vscode.Selection) => {
+        if(select.anchor.isEqual(select.active)){
+            return select;
+        }
+        let step = first(unitsForDoc(editor.document,select.anchor,
+            boundary === Boundary.Both ? Boundary.Start : boundary,
+            unit,true));
+        let start = step === undefined ? select.anchor : step;
+
+        step = first(unitsForDoc(editor.document,select.active,
+            boundary === Boundary.Both ? Boundary.End : boundary,
+            unit,false));
+        let stop = step === undefined ? select.active : step;
+
+        if(select.anchor.isBefore(select.active)){
+            return new vscode.Selection(start,stop);
+        }else{
+            return new vscode.Selection(stop,start);
+        }
+    };
 }
 
 function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
@@ -157,8 +215,8 @@ function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
         if(selectWholeUnit){
             let units = unitsForDoc(editor.document,select.active,boundary,
                 unit,!forward);
-            let [firstUnit, _] = first(units);
-            if(!firstUnit.done) start = firstUnit.value;
+            let value = first(units);
+            if(value !== undefined) start = value;
         }else if(holdSelect){
             start = select.anchor;
         }
