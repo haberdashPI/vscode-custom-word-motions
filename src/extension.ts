@@ -135,7 +135,7 @@ function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
     let selectWholeUnit = args.selectWhole === undefined ? false : args.selectWhole;
 
     let boundary: Boundary;
-    if(args.value === undefined){
+    if(args.boundary === undefined){
         boundary = Boundary.Start;
     }else if(args.boundary === 'start'){
         boundary = Boundary.Start;
