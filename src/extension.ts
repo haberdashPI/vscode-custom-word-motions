@@ -83,44 +83,44 @@ enum Boundary {
 }
 
 function* unitsForDoc(document: vscode.TextDocument, from: vscode.Position,
-    boundary: Boundary, unit: RegExp, forward: boolean){
+    boundary: Boundary, unit: RegExp, forward: boolean): Generator<[vscode.Position, Boundary]>{
 
     let line = from.line;
     let char = from.character;
     let str = document.lineAt(line).text
     if(forward){
-        for(let pos of unitBoundaries(str,boundary,unit)){
+        for(let [pos, bound] of unitBoundaries(str,boundary,unit)){
             if(pos < char) continue;
-            else yield new vscode.Position(line,pos);
+            else yield [new vscode.Position(line,pos), bound];
         }
         while(line < document.lineCount-1){
             line++;
             str = document.lineAt(line).text;
-            for(let pos of unitBoundaries(str,boundary,unit)){
-                yield new vscode.Position(line,pos);
+            for(let [pos, bound] of unitBoundaries(str,boundary,unit)){
+                yield [new vscode.Position(line,pos), bound];
             }
         }
     }else{
         let positions = Array.from(unitBoundaries(str,boundary,unit))
         if(positions.length > 0){
-            for(let pos of positions.reverse()){
+            for(let [pos, bound] of positions.reverse()){
                 if(pos > char) continue;
-                else yield new vscode.Position(line,pos);
+                else yield [new vscode.Position(line,pos), bound];
             }
         }
         while(line > 0){
             line--;
             str = document.lineAt(line).text;
             let positions = Array.from(unitBoundaries(str,boundary,unit))
-            for(let pos of positions.reverse()){
-                yield new vscode.Position(line,pos);
+            for(let [pos, bound] of positions.reverse()){
+                yield [new vscode.Position(line,pos), bound];
             }
         }
     }
 }
 
 
-function* unitBoundaries(text: string,boundary: Boundary, unit: RegExp){
+function* unitBoundaries(text: string,boundary: Boundary, unit: RegExp): Generator<[number, Boundary]>{
     let reg = RegExp(unit);
     reg.lastIndex = 0;
     let match = reg.exec(text);
@@ -128,12 +128,12 @@ function* unitBoundaries(text: string,boundary: Boundary, unit: RegExp){
 
     while(match){
         if(boundary === Boundary.Start){
-            yield match.index;
+            yield [match.index, Boundary.Start];
         }else if(boundary === Boundary.End){
-            yield match.index + match[0].length;
+            yield [match.index + match[0].length, Boundary.End];
         }else if(boundary === Boundary.Both){
-            yield match.index;
-            yield match.index + match[0].length;
+            yield [match.index, Boundary.Start];
+            yield [match.index + match[0].length, Boundary.End];
         }
         match = reg.exec(text);
     }
@@ -180,13 +180,13 @@ function narrowTo(editor: vscode.TextEditor, args: NarrowByArgs): (select: vscod
             boundary === Boundary.Both ? Boundary.Start : boundary,
             unit,true);
         let step = first(starts);
-        let start = step === undefined ? select.start: step;
+        let start = step === undefined ? select.start : step[0];
 
         let stops = unitsForDoc(editor.document,select.end,
             boundary === Boundary.Both ? Boundary.End : boundary,
             unit,false);
         step = first(stops);
-        let stop = step === undefined ? select.end : step;
+        let stop = step === undefined ? select.end : step[0];
 
         if(stop.isEqual(select.end) && start.isEqual(select.start)){
             if(thenNarrow){ return thenNarrow(select); }
@@ -229,7 +229,7 @@ function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
             let units = unitsForDoc(editor.document,select.active,boundary,
                 unit,!forward);
             let value = first(units);
-            if(value !== undefined) start = value;
+            if(value !== undefined) [start] = value;
         }else if(holdSelect){
             start = select.anchor;
         }
@@ -238,8 +238,20 @@ function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
             unit,forward);
         let count = 0;
         let pos = select.active;
-        for(pos of units){
-            if(!pos.isEqual(select.active)) count++;
+        let bound: Boundary;
+        let seenStart = false;
+        for([pos, bound] of units){
+            if(bound === Boundary.Start){
+                if(selectWholeUnit){
+                    start = pos;
+                    seenStart = true;
+                }
+            }
+            if(!pos.isEqual(select.active)){
+                if(selectWholeUnit){
+                    if(bound === Boundary.End && seenStart){ count++; }
+                }else{ count++; }
+            }
             if(count === steps) break;
         }
         if(start){
