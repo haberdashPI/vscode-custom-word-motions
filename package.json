@@ -1,8 +1,10 @@
 {
+	"publisher": "haberdashPI",
 	"name": "vscode-custom-word-motions",
 	"displayName": "Custom Word Motions",
 	"description": "Highly customizable word by word cursor motions using regex's.",
 	"version": "0.0.1",
+	"license": "MIT",
 	"engines": {
 		"vscode": "^1.44.0"
 	},
