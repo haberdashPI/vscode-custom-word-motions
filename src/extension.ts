@@ -241,7 +241,7 @@ function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
         let bound: Boundary;
         let seenStart = false;
         for([pos, bound] of units){
-            if(bound === Boundary.Start){
+            if(forward ? bound === Boundary.Start : bound === Boundary.End){
                 if(selectWholeUnit && boundary === Boundary.Both){
                     start = pos;
                     seenStart = true;
@@ -249,7 +249,10 @@ function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
             }
             if(!pos.isEqual(select.active)){
                 if(selectWholeUnit && boundary === Boundary.Both){
-                    if(bound === Boundary.End && seenStart){ count++; }
+                    if(seenStart && forward ? bound === Boundary.End :
+                                              bound === Boundary.Start){
+                        count++;
+                    }
                 }else{ count++; }
             }
             if(count === steps) break;
