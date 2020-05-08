@@ -4,15 +4,44 @@ import * as vscode from 'vscode';
 import { strict, match } from 'assert';
 
 interface MoveByArgs{
-    unit?: RegExp,
+    unit?: string,
     select?: boolean,
+    selectWhole?: boolean,
     value?: number
     boundary?: string,
+}
+
+interface IHash<T>{
+    [details: string]: T
+}
+
+interface UnitDef{
+    name: string,
+    regex: string,
+}
+
+let units: IHash<RegExp> = {};
+
+function updateUnits(event?: vscode.ConfigurationChangeEvent){
+    if(!event || event.affectsConfiguration("vscode-custom-word-motions")){
+        let config = vscode.workspace.getConfiguration("vscode-custom-word-motions");
+        let newUnits = config.get<Array<UnitDef>>("units");
+        units = {};
+        if(newUnits){
+            for(let unit of newUnits){
+                units[unit.name] = RegExp(unit.regex,"gu");
+            }
+        }
+    }
 }
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+
+    // TODO: create a way to define regex's in settings.json
+    updateUnits();
+    vscode.workspace.onDidChangeConfiguration(updateUnits);
 
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with registerCommand
@@ -44,13 +73,13 @@ function* unitsForDoc(document: vscode.TextDocument, from: vscode.Position,
     if(forward){
         for(let pos of unitBoundaries(str,boundary,unit)){
             if(pos < char) continue;
-            else yield new vscode.Position(pos,line);
+            else yield new vscode.Position(line,pos);
         }
         while(line < document.lineCount-1){
             line++;
             str = document.lineAt(line).text;
             for(let pos of unitBoundaries(str,boundary,unit)){
-                yield new vscode.Position(pos,line);
+                yield new vscode.Position(line,pos);
             }
         }
     }else{
@@ -58,7 +87,7 @@ function* unitsForDoc(document: vscode.TextDocument, from: vscode.Position,
         if(positions.length > 0){
             for(let pos of positions.reverse()){
                 if(pos > char) continue;
-                else yield new vscode.Position(pos,line);
+                else yield new vscode.Position(line,pos);
             }
         }
         while(line > 0){
@@ -66,7 +95,7 @@ function* unitsForDoc(document: vscode.TextDocument, from: vscode.Position,
             str = document.lineAt(line).text;
             let positions = Array.from(unitBoundaries(str,boundary,unit))
             for(let pos of positions.reverse()){
-                yield new vscode.Position(pos,line);
+                yield new vscode.Position(line,pos);
             }
         }
     }
@@ -75,6 +104,7 @@ function* unitsForDoc(document: vscode.TextDocument, from: vscode.Position,
 
 function* unitBoundaries(text: string,boundary: Boundary, unit: RegExp){
     let reg = RegExp(unit);
+    reg.lastIndex = 0;
     let match = reg.exec(text);
     let boundaries: number[] = [];
 
@@ -98,9 +128,11 @@ function first<T>(x: Iterable<T>): [IteratorResult<T,T>, Iterator<T,T>]{
 }
 
 function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
-    let unit = args.unit === undefined ? /w+/ : args.unit;
+    let unit = args.unit === undefined ? /\p{L}+/gu : units[args.unit];
     let forward = args.value === undefined ? true : args.value > 0;
-    let select = args.select === undefined ? false : args.select;
+    let holdSelect = args.select === undefined ? false : args.select;
+    let selectWholeUnit = args.selectWhole === undefined ? false : args.selectWhole;
+
     let boundary: Boundary;
     if(args.value === undefined){
         boundary = Boundary.Start;
@@ -120,16 +152,26 @@ function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
     return (select: vscode.Selection) => {
         // TODO: if its a default word, we take advantage
         // of language specific word definitions
+        let start: vscode.Position | undefined = undefined;
+        if(selectWholeUnit){
+            let units = unitsForDoc(editor.document,select.active,boundary,
+                unit,!forward);
+            let [firstUnit, _] = first(units);
+            if(!firstUnit.done) start = firstUnit.value;
+        }else if(holdSelect){
+            start = select.anchor;
+        }
+
         let units = unitsForDoc(editor.document,select.active,boundary,
             unit,forward);
         let count = 0;
         let pos = select.active;
         for(pos of units){
-            count++;
+            if(!pos.isEqual(select.active)) count++;
             if(count === steps) break;
         }
-        if(select){
-            return new vscode.Selection(select.anchor,pos);
+        if(start){
+            return new vscode.Selection(start,pos);
         }else{
             return new vscode.Selection(pos,pos);
         }

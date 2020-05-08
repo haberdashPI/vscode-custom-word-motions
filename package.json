@@ -10,16 +10,32 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:vscode-custom-word-motions.helloWorld"
+		"onCommand:vscode-custom-word-motions.moveby"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "vscode-custom-word-motions.helloWorld",
-				"title": "Hello World"
+				"command": "vscode-custom-word-motions.moveby",
+				"title": "Move cursor by a given custom unit"
 			}
-		]
+		],
+		"configuration": {
+			"title": "Custom Word Motion Definitions",
+			"properties": {
+				"vscode-custom-word-motions.units": {
+					"type": "array",
+					"default": [
+						{"name": "WORD", "regex": "[^\\s]+"},
+						{"name": "word", "regex": "[_\\p{L}][_\\p{L}0-9]+"},
+						{"name": "subword", "regex": "((\\p{L})[0-9,\\p{Ll}]+|\\p{Lu}+|[^\\p{L}\\s]+)"},
+						{"name": "space", "regex": "\\s+"},
+						{"name": "punctuation", "regex": "[^\\p{L}\\s]+"}
+					],
+					"description": "Defines a set of named regular expressions to move the cursor by"
+				}
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
