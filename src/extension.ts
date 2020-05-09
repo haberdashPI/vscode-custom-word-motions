@@ -239,17 +239,15 @@ function moveBy(editor: vscode.TextEditor,args: MoveByArgs){
         let count = 0;
         let pos = select.active;
         let bound: Boundary;
-        let seenStart = false;
         for([pos, bound] of units){
             if(forward ? bound === Boundary.Start : bound === Boundary.End){
                 if(selectWholeUnit && boundary === Boundary.Both){
                     start = pos;
-                    seenStart = true;
                 }
             }
             if(!pos.isEqual(select.active)){
                 if(selectWholeUnit && boundary === Boundary.Both){
-                    if(seenStart && forward ? bound === Boundary.End :
+                    if(forward ? bound === Boundary.End :
                                               bound === Boundary.Start){
                         count++;
                     }
