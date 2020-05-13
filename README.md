@@ -50,13 +50,14 @@ the regex `\p{L}+` is used.
   selected. If it is, the next such regex is selected.
 
 For example to move the cursor to the start of the next number, (using the regex
-definitions provided above), using ctrl+# you could define the following
+definitions provided above), using `ctrl+#` you could define the following
 command in your `keybindings.json` file.
 
 ```json
 {
     "command": "vscode-custom-word-motions.moveby",
-    "args": { "unit": "number" }
+    "args": { "unit": "number" },
+    "key": "ctrl+#"
 }
 ```
 
@@ -72,15 +73,16 @@ takes four optional arguments.
   `end` or `both` boundaries of the regex. Defaults to `start`.
 - `then`: If the selection is already at the boundaries of `unit`, you can
   specify a second regex to narrow the selection by here.
-- `thenBoundary`: The boundaries of to use for `then` if they are different
+- `thenBoundary`: The boundaries to use for `then` if different
 from those specified for `boundary`.
 
 For example, to narrow the boundaries of the selection to lie at non-white-space characters by
-pressing "shift+cmd+(" you could add the following to `keybindings.json`.
+pressing `shift+cmd+(` you could add the following to `keybindings.json`.
 
 ```json
 {
     "command": "vscode-custom-word-motions.narrowto",
-    "args": { "unit": "WORD" }
+    "args": { "unit": "WORD" },
+    "key": "shift+cmd+(",
 }
 ```
