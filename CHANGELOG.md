@@ -1,9 +1,9 @@
 # Change Log
+All notable changes to the "terminal-polyglot" extension will be documented in this file.
 
-All notable changes to the "vscode-custom-word-motions" extension will be documented in this file.
+## [0.0.4]
+- Full documentation of extension features.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [0.0.1-0.0.3]
 
-## [Unreleased]
-
-- Initial release
+- Initial feature releases (undocumented).

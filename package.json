@@ -3,6 +3,7 @@
 	"name": "vscode-custom-word-motions",
 	"displayName": "Custom Word Motions",
 	"repository": "https://github.com/haberdashPI/vscode-custom-word-motions",
+	"icon": "icon.png",
 	"description": "Highly customizable word by word cursor motions using regex's.",
 	"version": "0.0.3",
 	"license": "MIT",
@@ -33,13 +34,6 @@
 			"properties": {
 				"vscode-custom-word-motions.units": {
 					"type": "array",
-					"default": [
-						{"name": "WORD", "regex": "[^\\s]+"},
-						{"name": "word", "regex": "[_\\p{L}][_\\p{L}0-9]+"},
-						{"name": "subword", "regex": "((\\p{L})[0-9,\\p{Ll}]+|\\p{Lu}+|[^\\p{L}\\s]+)"},
-						{"name": "space", "regex": "\\s+"},
-						{"name": "punctuation", "regex": "[^\\p{L}\\s]+"}
-					],
 					"description": "Defines a set of named regular expressions to move the cursor by"
 				}
 			}
