@@ -100,6 +100,14 @@ function* unitsForDoc(document: vscode.TextDocument, from: vscode.Position,
                 yield [new vscode.Position(line,pos), bound];
             }
         }
+        let finalChar = document.lineAt(document.lineCount-1).range.end.character;
+        if(boundary === Boundary.Start){
+            yield [new vscode.Position(document.lineCount-1,finalChar), Boundary.End];
+        }else if (boundary === Boundary.End){
+            yield [new vscode.Position(document.lineCount-1,finalChar), Boundary.Start];
+        }else{
+            yield [new vscode.Position(document.lineCount-1,finalChar), Boundary.Start];
+        }
     }else{
         let positions = Array.from(unitBoundaries(str,boundary,unit))
         if(positions.length > 0){
@@ -115,6 +123,13 @@ function* unitsForDoc(document: vscode.TextDocument, from: vscode.Position,
             for(let [pos, bound] of positions.reverse()){
                 yield [new vscode.Position(line,pos), bound];
             }
+        }
+        if(boundary === Boundary.Start){
+            yield [new vscode.Position(0,0), Boundary.End];
+        }else if (boundary === Boundary.End){
+            yield [new vscode.Position(0,0), Boundary.Start];
+        }else{
+            yield [new vscode.Position(0,0), Boundary.End];
         }
     }
 }
