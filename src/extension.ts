@@ -72,7 +72,8 @@ export function activate(context: vscode.ExtensionContext) {
             let editor = vscode.window.activeTextEditor;
             if(editor){
                 editor.selections = editor.selections.map(moveBy(editor,args));
-                editor.revealRange(editor.selection);
+                let pos = editor.selection.active;
+                editor.revealRange(new vscode.Range(pos,pos));
             }
         }
     );
