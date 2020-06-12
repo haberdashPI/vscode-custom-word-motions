@@ -82,8 +82,9 @@ enum Boundary {
     Both
 }
 
-function* unitsForDoc(document: vscode.TextDocument, from: vscode.Position,
-    boundary: Boundary, unit: RegExp, forward: boolean): Generator<[vscode.Position, Boundary]>{
+function* singleLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Position,
+    boundary: Boundary, unit: RegExp, forward: boolean):
+    Generator<[vscode.Position, Boundary]>{
 
     let line = from.line;
     let char = from.character;
