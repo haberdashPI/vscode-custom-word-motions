@@ -8,7 +8,7 @@ file and move the cursor or a selection in reference to the boundaries of these
 expressions.
 
 There are two commands: `vscode-custom-word-motions.moveby` and
-`vscode-custom-word-motions.narrowto`
+`vscode-custom-word-motions.narrowto`. Both properly handle multiple cursors.
 
 ## Defining regular expressions
 
@@ -57,7 +57,7 @@ command in your `keybindings.json` file.
 {
     "command": "vscode-custom-word-motions.moveby",
     "args": { "unit": "number" },
-    "key": "ctrl+#"
+    "key": "ctrl+shift+3"
 }
 ```
 
@@ -77,12 +77,32 @@ takes four optional arguments.
 from those specified for `boundary`.
 
 For example, to narrow the boundaries of the selection to lie at non-white-space characters by
-pressing `shift+cmd+(` you could add the following to `keybindings.json`.
+pressing `cmd+(` you could add the following to `keybindings.json`.
 
 ```json
 {
     "command": "vscode-custom-word-motions.narrowto",
     "args": { "unit": "WORD" },
-    "key": "shift+cmd+(",
+    "key": "shift+cmd+9",
+}
+```
+
+## Multi-line units
+
+This package now supports defining multi-line units. Every line of the unit must have a match to the provided regular expression. To use this feature change the unit entry to use `regexs` instead of `regex`. For instance, to select a group of contiguous non-whitespace lines with "cmd+shift+[" you could add the following definition to preferences.
+
+```json
+"vscode-custom-word-motions.units": [
+    {"name": "paragraph", "regexs": "\\S+"},
+]
+```
+
+Then add the following definition to keybindings.json
+
+```json
+{
+    "command": "vscode-custom-word-motions.moveby",
+    "args": { "unit": "paragraph", "selectWhole": false },
+    "key": "shift+cmd+9",
 }
 ```
