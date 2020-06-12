@@ -27,16 +27,30 @@ interface UnitDef{
     regex: string,
 }
 
-let units: IHash<RegExp> = {};
+
+interface MultiUnitDef {
+    name: string,
+    regexs: string,
+}
+
+let units: IHash<RegExp | MultiLineUnit> = {};
 
 function updateUnits(event?: vscode.ConfigurationChangeEvent){
     if(!event || event.affectsConfiguration("vscode-custom-word-motions")){
         let config = vscode.workspace.getConfiguration("vscode-custom-word-motions");
-        let newUnits = config.get<Array<UnitDef>>("units");
+        let newUnits = config.get<Array<UnitDef | MultiUnitDef>>("units");
         units = {};
         if(newUnits){
             for(let unit of newUnits){
-                units[unit.name] = RegExp(unit.regex,"gu");
+                if((unit as UnitDef).regex){
+                    units[unit.name] = RegExp((unit as UnitDef).regex,"gu");
+                }else if((unit as MultiUnitDef).regexs){
+                    units[unit.name] = {
+                        regexs: RegExp((unit as MultiUnitDef).regexs,"u")
+                    };
+                }else{
+                    vscode.window.showErrorMessage("Malformed unit definition");
+                }
             }
         }
     }
@@ -76,10 +90,68 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(command);
 }
 
-enum Boundary {
-    Start,
-    End,
-    Both
+enum Boundary { Start, End, Both }
+
+interface MultiLineUnit { regexs: RegExp, }
+
+function* multiLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Position,
+    boundary: Boundary, unit: MultiLineUnit, forward: boolean):
+    Generator<[vscode.Position, Boundary]>{
+
+    let lineNum = from.line;
+    let start = lineNum;
+    let lines: string[] = [];
+    let lastBoundary = forward ? Boundary.End : Boundary.Start;
+    while(forward ? lineNum < document.lineCount : lineNum >= 0){
+        let line = document.lineAt(lineNum).text;
+        if(unit.regexs.test(line)){
+            lines.push(line);
+        }else if(lines.length > 0){
+            let startPos = forward ? new vscode.Position(start,0) :
+                new vscode.Position(lineNum,0);
+            let endchar = forward ?
+                document.lineAt(Math.max(0,lineNum-1)).range.end.character :
+                document.lineAt(Math.min(document.lineCount-1,start+1)).
+                    range.end.character;
+            let endPos = forward ?
+                new vscode.Position(lineNum-1,endchar) :
+                new vscode.Position(start,endchar);
+            if(boundary !== Boundary.End &&
+               (!forward || startPos.isAfterOrEqual(from))){
+
+                lastBoundary = Boundary.Start;
+                yield [startPos, Boundary.Start];
+            }
+            if(boundary !== Boundary.Start &&
+                (forward || endPos.isBeforeOrEqual(from))){
+
+                lastBoundary = Boundary.End;
+                yield [endPos, Boundary.End];
+            }
+            lines = [];
+            start = forward ? lineNum+1 : lineNum-1;
+        }
+        forward ? lineNum++ : lineNum--;
+    }
+    // handle boundaries at start and end of document
+    let documentBoundary = forward ?
+        new vscode.Position(document.lineCount-1,
+            document.lineAt(document.lineCount-1).range.end.character) :
+        new vscode.Position(0,0);
+    yield [documentBoundary, boundary !== Boundary.Both ? boundary :
+        lastBoundary];
+    return;
+}
+
+function unitsForDoc(document: vscode.TextDocument, from: vscode.Position,
+    boundary: Boundary, unit: RegExp | MultiLineUnit | string[], forward: boolean){
+
+    if(unit instanceof RegExp){
+        return singleLineUnitsForDoc(document, from, boundary, unit, forward);
+    }else{
+        return multiLineUnitsForDoc(document, from, boundary, unit as MultiLineUnit,
+            forward);
+    }
 }
 
 function* singleLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Position,
