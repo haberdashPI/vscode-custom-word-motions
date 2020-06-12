@@ -88,7 +88,7 @@ function* singleLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posi
 
     let line = from.line;
     let char = from.character;
-    let str = document.lineAt(line).text
+    let str = document.lineAt(line).text;
     if(forward){
         for(let [pos, bound] of unitBoundaries(str,boundary,unit)){
             if(pos < char) continue;
@@ -102,13 +102,8 @@ function* singleLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posi
             }
         }
         let finalChar = document.lineAt(document.lineCount-1).range.end.character;
-        if(boundary === Boundary.Start){
-            yield [new vscode.Position(document.lineCount-1,finalChar), Boundary.End];
-        }else if (boundary === Boundary.End){
-            yield [new vscode.Position(document.lineCount-1,finalChar), Boundary.Start];
-        }else{
-            yield [new vscode.Position(document.lineCount-1,finalChar), Boundary.Start];
-        }
+        yield [new vscode.Position(document.lineCount-1,finalChar),
+                boundary === Boundary.Both ? Boundary.End : boundary];
     }else{
         let positions = Array.from(unitBoundaries(str,boundary,unit))
         if(positions.length > 0){
@@ -125,13 +120,8 @@ function* singleLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posi
                 yield [new vscode.Position(line,pos), bound];
             }
         }
-        if(boundary === Boundary.Start){
-            yield [new vscode.Position(0,0), Boundary.End];
-        }else if (boundary === Boundary.End){
-            yield [new vscode.Position(0,0), Boundary.Start];
-        }else{
-            yield [new vscode.Position(0,0), Boundary.End];
-        }
+        yield [new vscode.Position(0,0),
+            boundary === Boundary.Both ? Boundary.Start : boundary];
     }
 }
 
