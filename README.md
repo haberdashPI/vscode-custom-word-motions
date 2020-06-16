@@ -32,6 +32,8 @@ example, my settings include the following.
 
 ```
 
+You can also define multi-line units; see below.
+
 ## The `moveby` command
 
 The `moveby` command moves the cursor according to one of the regular expressions
@@ -102,7 +104,7 @@ Then add the following definition to keybindings.json
 ```json
 {
     "command": "vscode-custom-word-motions.moveby",
-    "args": { "unit": "paragraph", "selectWhole": false },
+    "args": { "unit": "paragraph", "selectWhole": true },
     "key": "shift+cmd+9",
 }
 ```
