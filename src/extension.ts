@@ -102,36 +102,31 @@ function* multiLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posit
     let lineNum = from.line;
     let start = lineNum;
     let lines: string[] = [];
-    let lastBoundary = forward ? Boundary.End : Boundary.Start;
+    let lastTest: boolean | undefined = undefined;
+    let finalBoundary = forward ? Boundary.End : Boundary.Start;
     while(forward ? lineNum < document.lineCount : lineNum >= 0){
         let line = document.lineAt(lineNum).text;
-        if(unit.regexs.test(line)){
-            lines.push(line);
-        }else if(lines.length > 0){
-            let startPos = forward ? new vscode.Position(start,0) :
-                new vscode.Position(lineNum,0);
-            let endchar = forward ?
-                document.lineAt(Math.max(0,lineNum-1)).range.end.character :
-                document.lineAt(Math.min(document.lineCount-1,start+1)).
-                    range.end.character;
-            let endPos = forward ?
-                new vscode.Position(lineNum-1,endchar) :
-                new vscode.Position(start,endchar);
-            if(boundary !== Boundary.End &&
-               (!forward || startPos.isAfter(from))){
-
-                lastBoundary = Boundary.Start;
-                yield [startPos, Boundary.Start];
+        let ismatch = unit.regexs.test(line);
+        if(ismatch){ lines.push(line); }
+        if(lastTest !== undefined && ismatch !== lastTest){
+            lastTest = ismatch;
+            let pos;
+            if(ismatch === forward && boundary !== Boundary.End){
+                pos = new vscode.Position(lineNum,0)
+                finalBoundary = Boundary.End;
+                yield [pos, Boundary.Start];
             }
-            if(boundary !== Boundary.Start &&
-                (forward || endPos.isBeforeOrEqual(from))){
-
-                lastBoundary = Boundary.End;
-                yield [endPos, Boundary.End];
+            if(ismatch !== forward && boundary !== Boundary.Start){
+                let line = forward ? lineNum-1 : lineNum+1;
+                let endchar = document.lineAt(line).range.end.character;
+                pos = new vscode.Position(line,endchar);
+                finalBoundary = Boundary.Start;
+                yield [pos, Boundary.End];
             }
             lines = [];
             start = forward ? lineNum+1 : lineNum-1;
         }
+        lastTest = ismatch;
         forward ? lineNum++ : lineNum--;
     }
     // handle boundaries at start and end of document
@@ -140,7 +135,7 @@ function* multiLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posit
             document.lineAt(document.lineCount-1).range.end.character) :
         new vscode.Position(0,0);
     yield [documentBoundary, boundary !== Boundary.Both ? boundary :
-        lastBoundary];
+        finalBoundary];
     return;
 }
 
