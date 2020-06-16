@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to the "terminal-polyglot" extension will be documented in this file.
 
+## [0.2.1]
+- Fixed bug in narrow-to command (could previously widen the selection)
+
 ## [0.2.0]
 - Better handling of end and start of document
 - Support for multi-line units

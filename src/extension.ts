@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { strict, match } from 'assert';
+import { stat } from 'fs';
 
 interface MoveByArgs{
     unit?: string,
@@ -264,6 +265,10 @@ function narrowTo(editor: vscode.TextEditor, args: NarrowByArgs): (select: vscod
 
         if(stop.isEqual(select.end) && start.isEqual(select.start)){
             if(thenNarrow){ return thenNarrow(select); }
+        }
+        if(stop.isBefore(select.start) || start.isAfter(select.end)){
+            if(thenNarrow){ return thenNarrow(select); }
+            else{ return select; }
         }
         if(select.anchor.isBefore(select.active)){
             return new vscode.Selection(start,stop);
