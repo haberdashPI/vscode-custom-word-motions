@@ -118,7 +118,7 @@ function* multiLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posit
                 new vscode.Position(lineNum-1,endchar) :
                 new vscode.Position(start,endchar);
             if(boundary !== Boundary.End &&
-               (!forward || startPos.isAfterOrEqual(from))){
+               (!forward || startPos.isAfter(from))){
 
                 lastBoundary = Boundary.Start;
                 yield [startPos, Boundary.Start];
