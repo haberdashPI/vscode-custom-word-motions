@@ -61,7 +61,6 @@ function updateUnits(event?: vscode.ConfigurationChangeEvent){
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-    // TODO: create a way to define regex's in settings.json
     updateUnits();
     vscode.workspace.onDidChangeConfiguration(updateUnits);
 
