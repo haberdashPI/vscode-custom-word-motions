@@ -57,6 +57,18 @@ function updateUnits(event?: vscode.ConfigurationChangeEvent){
     }
 }
 
+function revealRange(ed: vscode.TextEditor){
+    // try using selection utilities (if it exists)
+    vscode.commands.
+        executeCommand('selection-utilities.focus-primary-selection').then(
+            () => {},
+            () => { // if the command doesn't exist, focus the first selection
+                let pos = ed.selection.active;
+                ed.revealRange(new vscode.Selection(pos,pos));
+            }
+        );
+}
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -72,8 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
             let editor = vscode.window.activeTextEditor;
             if(editor){
                 editor.selections = editor.selections.map(moveBy(editor,args));
-                let pos = editor.selection.active;
-                editor.revealRange(new vscode.Range(pos,pos));
+                revealRange(editor);
             }
         }
     );
@@ -84,7 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
             let editor = vscode.window.activeTextEditor;
             if(editor){
                 editor.selections = editor.selections.map(narrowTo(editor,args));
-                editor.revealRange(editor.selection);
+                revealRange(editor);
             }
         }
     );
