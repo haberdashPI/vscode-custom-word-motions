@@ -31,7 +31,7 @@ interface UnitDef{
 
 interface MultiUnitDef {
     name: string,
-    regexs: string,
+    regexs: string | string[],
 }
 
 let units: IHash<RegExp | MultiLineUnit> = {};
@@ -46,8 +46,15 @@ function updateUnits(event?: vscode.ConfigurationChangeEvent){
                 if((unit as UnitDef).regex){
                     units[unit.name] = RegExp((unit as UnitDef).regex,"gu");
                 }else if((unit as MultiUnitDef).regexs){
+                    let unitdef = (unit as MultiUnitDef);
+                    let regexs: string[];
+                    if(unitdef.regexs instanceof Array){
+                        regexs = (unitdef.regexs as string[]);
+                    }else{
+                        regexs = [(unitdef.regexs as string)];
+                    }
                     units[unit.name] = {
-                        regexs: RegExp((unit as MultiUnitDef).regexs,"u")
+                        regexs: regexs.map(x => RegExp(x,"u"))
                     };
                 }else{
                     vscode.window.showErrorMessage("Malformed unit definition");
@@ -104,7 +111,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 enum Boundary { Start, End, Both }
 
-interface MultiLineUnit { regexs: RegExp, }
+interface MultiLineUnit { regexs: RegExp[], }
 
 function* multiLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Position,
     boundary: Boundary, unit: MultiLineUnit, forward: boolean):
@@ -112,23 +119,33 @@ function* multiLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posit
 
     let lineNum = from.line;
     let start = lineNum;
+    let curLinesToMatch: string[] = [];
     let lines: string[] = [];
     let lastTest: boolean | undefined = undefined;
     let finalBoundary = forward ? Boundary.End : Boundary.Start;
     while(forward ? lineNum < document.lineCount : lineNum >= 0){
         let line = document.lineAt(lineNum).text;
-        let ismatch = unit.regexs.test(line);
+        curLinesToMatch.push(line);
+        if(curLinesToMatch.length > unit.regexs.length){
+            curLinesToMatch.shift();
+        }
+        let ismatch = curLinesToMatch.length === unit.regexs.length ?
+            forward ? unit.regexs.every((x,i) => x.test(curLinesToMatch[i])) :
+            unit.regexs.
+                every((x,i) => x.test(curLinesToMatch[curLinesToMatch.length-(i+1)])) :
+            false;
         if(ismatch){ lines.push(line); }
         if(lastTest !== undefined && ismatch !== lastTest){
             lastTest = ismatch;
             let pos;
             if(ismatch === forward && boundary !== Boundary.End){
-                pos = new vscode.Position(lineNum,0)
+                pos = new vscode.Position(forward ? lineNum - 1 : lineNum + 1,0);
                 finalBoundary = Boundary.End;
                 yield [pos, Boundary.Start];
             }
             if(ismatch !== forward && boundary !== Boundary.Start){
-                let line = forward ? lineNum-1 : lineNum+1;
+                let line = forward ? lineNum-unit.regexs.length :
+                    lineNum+unit.regexs.length;
                 let endchar = document.lineAt(line).range.end.character;
                 pos = new vscode.Position(line,endchar);
                 finalBoundary = Boundary.Start;

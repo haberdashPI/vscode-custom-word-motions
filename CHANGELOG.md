@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to the "terminal-polyglot" extension will be documented in this file.
 
+## [0.2.3]
+- Improved multi-line unit support
+
 ## [0.2.2]
 - Motions makes the cursor visible.
 

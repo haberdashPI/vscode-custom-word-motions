@@ -91,7 +91,16 @@ pressing `cmd+(` you could add the following to `keybindings.json`.
 
 ## Multi-line units
 
-This package now supports defining multi-line units. Every line of the unit must have a match to the provided regular expression. To use this feature change the unit entry to use `regexs` instead of `regex`. For instance, to select a group of contiguous non-whitespace lines with "cmd+shift+[" you could add the following definition to preferences.
+This extension now supports defining units for multi-line matches.
+
+To use this feature change the unit entry to use `regexs` instead of `regex`.
+
+If a single regular expression is provided, the match will occur to a contiguous series of
+lines which all match that expression. If multiple expressions are provided, the match will
+occur to a sequence of lines that match those expressions.
+
+For instance, to select a group of contiguous non-whitespace lines with "cmd+shift+[" you
+could add the following definition to preferences.
 
 ```json
 "vscode-custom-word-motions.units": [
@@ -106,5 +115,30 @@ Then add the following definition to keybindings.json
     "command": "vscode-custom-word-motions.moveby",
     "args": { "unit": "paragraph", "selectWhole": true },
     "key": "shift+cmd+9",
+}
+```
+
+Or, for instance, you could selection sections of code separated by comment headers
+
+```json
+"vscode-custom-word-motions.units": [
+    {"name": "section", "regexs": [".+", "^.*------.*$"]}
+]"
+```
+
+Where a section header looks like this
+
+```javascript
+// My section
+// -----------------------------------------------------------------
+```
+
+You could then select all code in the section using a keybinding like follows.
+
+```json
+{
+    "command": "vscode-custom-word-motions.moveby",
+    "args": { "unit": "section", "boundary": "start", "selectWhole": true },
+    "key": "shift+cmd+0",
 }
 ```
