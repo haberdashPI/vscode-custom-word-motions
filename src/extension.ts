@@ -117,7 +117,8 @@ function* multiLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posit
     boundary: Boundary, unit: MultiLineUnit, forward: boolean):
     Generator<[vscode.Position, Boundary]>{
 
-    let lineNum = from.line;
+    let lineNum = from.line + (unit.regexs.length-1)*(forward ? -1 : 1);
+    lineNum = Math.max(Math.min(document.lineCount, lineNum), 0);
     let start = lineNum;
     let curLinesToMatch: string[] = [];
     let lines: string[] = [];
@@ -141,7 +142,9 @@ function* multiLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posit
             if(ismatch === forward && boundary !== Boundary.End){
                 pos = new vscode.Position(forward ? lineNum - 1 : lineNum + 1,0);
                 finalBoundary = Boundary.End;
-                yield [pos, Boundary.Start];
+                if(forward ? pos.line >= from.line : pos.line <= from.line){
+                    yield [pos, Boundary.Start];
+                }
             }
             if(ismatch !== forward && boundary !== Boundary.Start){
                 let line = forward ? lineNum-unit.regexs.length :
@@ -149,7 +152,9 @@ function* multiLineUnitsForDoc(document: vscode.TextDocument, from: vscode.Posit
                 let endchar = document.lineAt(line).range.end.character;
                 pos = new vscode.Position(line,endchar);
                 finalBoundary = Boundary.Start;
-                yield [pos, Boundary.End];
+                if(forward ? pos.line >= from.line : pos.line <= from.line){
+                    yield [pos, Boundary.End];
+                }
             }
             lines = [];
             start = forward ? lineNum+1 : lineNum-1;

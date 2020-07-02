@@ -5,7 +5,7 @@
 	"repository": "https://github.com/haberdashPI/vscode-custom-word-motions",
 	"icon": "icon.png",
 	"description": "Highly customizable word by word cursor motions using regex's.",
-	"version": "0.2.3",
+	"version": "0.2.4",
 	"license": "MIT",
 	"engines": {
 		"vscode": "^1.44.0"

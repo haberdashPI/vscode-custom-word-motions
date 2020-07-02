@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to the "terminal-polyglot" extension will be documented in this file.
 
+## [0.2.4]
+- **Bugfix** - multi-line motion could previosuly selcet two
+units instead of one when when `wholeUnit == true`.
+
 ## [0.2.3]
 - Improved multi-line unit support
 
