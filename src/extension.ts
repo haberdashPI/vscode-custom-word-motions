@@ -107,6 +107,8 @@ export function activate(context: vscode.ExtensionContext) {
         }
     );
     context.subscriptions.push(command);
+
+    vscode.window.showErrorMessage("This extension is deprecated, Please refer to [selection-utilities](https://github.com/haberdashPI/vscode-selection-utilities) for the latest updates.")
 }
 
 enum Boundary { Start, End, Both }

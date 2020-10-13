@@ -1,5 +1,7 @@
 # Custom Word Motions for VSCode
 
+**DEPRECATED**: Please refer to [selection-utilities](https://github.com/haberdashPI/vscode-selection-utilities) for the latest updates for this plugin.
+
 Prefer vim-style word motion, emacs-style, or your-own-style? This is the
 extension for you.
 
